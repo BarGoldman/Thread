@@ -15,4 +15,4 @@ main.o: main.c
 
 .PHONY: clean
 clean:
-	-rm randomGenerator primeCounter 2>/dev/null
+	-rm randomGenerator primeCounter -rf *.o main 2>/dev/null
