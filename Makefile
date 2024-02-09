@@ -1,8 +1,8 @@
 .PHONY: all
 all: generator primeCounter run
 
-run: main.o
-	gcc -o main main.o -lm -lpthread
+run: performance.o
+	gcc -o performance performance.o -lm -lpthread
 
 generator:  generator.c
 	gcc -o randomGenerator generator.c
@@ -10,9 +10,9 @@ generator:  generator.c
 primeCounter:	primeCounter.c
 	gcc -o primeCounter primeCounter.c
 
-main.o: main.c
-	gcc -c main.c -o main.o
+performance.o: performance.c
+	gcc -c performance.c -o performance.o
 
 .PHONY: clean
 clean:
-	-rm randomGenerator primeCounter -rf *.o main 2>/dev/null
+	-rm randomGenerator primeCounter -rf *.o performance 2>/dev/null
