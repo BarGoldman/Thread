@@ -47,13 +47,24 @@ int main() {
     int capacity = 10; // Initial capacity of the numbers array.
     int* numbers = (int*)malloc(capacity * sizeof(int)); // Dynamically allocate array.
 
+    int maxIntegers = 2097152 / sizeof(int); // Maximum number of integers within 2MB.
+
     // Read all numbers from stdin into the array.
     while (scanf("%d", &num) != EOF) {
         if (numOfNumbers >= capacity) { // Array is full, need more space.
-            capacity *= 2; // Double the capacity.
+            if (capacity * 2 > maxIntegers) {
+                printf("Maximum capacity reached. Cannot allocate more than 2MB.\n");
+                break; // Stop reading more numbers to avoid exceeding 2MB.
+            }
+            capacity = (capacity * 2 <= maxIntegers) ? capacity * 2 : maxIntegers; // Ensure not to exceed maxIntegers.
             numbers = (int*)realloc(numbers, capacity * sizeof(int)); // Reallocate with new capacity.
         }
-        numbers[numOfNumbers++] = num; // Store the number and increment count.
+        if (numOfNumbers < maxIntegers) {
+            numbers[numOfNumbers++] = num; // Store the number and increment count.
+        } else {
+            printf("Maximum capacity reached. Cannot store more numbers.\n");
+            break; // Stop reading more numbers to avoid exceeding 2MB.
+        }
     }
 
     // Initialize mutex for thread safety.
