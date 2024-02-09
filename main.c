@@ -1,93 +1,3 @@
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <stdbool.h>
-// #include <pthread.h>
-// #include <math.h>
-// #include <unistd.h>
-// #include <sys/sysinfo.h>
-// #include <sys/time.h>
-// #include <semaphore.h>
-// #define MAX_THREADS 4  // Limit number of threads to manage memory usage
-
-// #define NUM_T 2
-// #define NUM_T_L 1
-// // pthread_t* tid;
-// pthread_mutex_t lock;
-// long sum = 0;
-// int primeCounter = 0;  // Global counter for primes
-// long numOfRandomNumbers;
-
-// int randomPivot;
-// long Thread_num;
-// int y;
-// int x;
-// // Function to check if a number is prime
-// bool isPrime(int num) {
-//     if (num <= 1) return false;
-//     if (num % 2 == 0 && num > 2) return false;
-//     for (int i = 3; i <= sqrt(num); i += 2) {
-//         if (num % i == 0) return false;
-//     }
-//     return true;
-// }
-
-// void* countPrimes(int num) {
-//     while (scanf("%d", &num) != EOF) {
-//         if (isPrime(num)) {
-//             pthread_mutex_lock(&lock);
-//             primeCounter++;
-//             pthread_mutex_unlock(&lock);
-//         }
-//     }
-//     return NULL;
-// }
-
-
-
-// int main()
-// {
-
-//     if (pthread_mutex_init(&lock, NULL) != 0)
-//     {
-//         printf("erro");
-//         return 1;
-//     }
-
-//     int e;
-
-//     // Thread_num = get_nprocs_conf();// Number of processors
-
-//     pthread_t tid[MAX_THREADS];
-//     int num;
-//     // int total_counter = 0;
-
-    
-//     for (int i = 0; i < MAX_THREADS ; i++)
-//     {
-
-//         e = pthread_create(&(tid[i]), NULL, &countPrimes, num);
-//         //check if the number is prime
-//         if (e != 0)
-//         {
-//             perror("Failed to create thread");
-//             return 1;
-//         }
-//     }
-    
-//     // Wait for all threads to finish
-//     for (int i = 0; i < MAX_THREADS; i++)
-//     {
-//         pthread_join(tid[i], NULL);
-//     }
-
-//     //keep the out format as this!!
-//     printf("%d total primes.\n", primeCounter);
-
-//     // Clean up and exit
-//     pthread_mutex_destroy(&lock);
-    
-//     return 0;
-// }
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -95,80 +5,101 @@
 #include <math.h>
 #include <time.h> 
 
-#define MAX_THREADS 4
+#define MAX_THREADS 4 // Defines the maximum number of threads to limit memory usage.
 
-pthread_mutex_t lock;
-int primeCounter = 0;  // Global counter for primes
+pthread_mutex_t lock; // Mutex for protecting the shared total_counter variable.
+int total_counter = 0;  // Global counter for the number of prime numbers found.
 
+// Structure to hold information for each thread about the range of numbers to process.
 typedef struct {
-    int* numbers; // Array of numbers to check
-    int start;    // Start index in the array
-    int end;      // End index in the array (exclusive)
+    int* numbers; // Pointer to the array of numbers to check.
+    int start;    // Start index in the array for this thread's work.
+    int end;      // End index in the array for this thread's work (exclusive).
 } PrimeWork;
 
+// Function to check if a number is prime.
 bool isPrime(int num) {
-    if (num <= 1) return false;
-    if (num == 2) return true;
-    if (num % 2 == 0) return false;
-    for (int i = 3; i <= sqrt(num); i += 2) {
-        if (num % i == 0) return false;
+    if (num <= 1) return false; 
+    if (num == 2) return true; 
+    if (num % 2 == 0) return false; 
+    for (int i = 3; i <= sqrt(num); i += 2) { 
+        if (num % i == 0) return false; 
     }
-    return true;
+    return true; 
 }
 
+// Thread function to count prime numbers within a range of the array.
 void* countPrimes(void* arg) {
-    PrimeWork* work = (PrimeWork*)arg;
-    for (int i = work->start; i < work->end; i++) {
+    PrimeWork* work = (PrimeWork*)arg; // Cast argument to PrimeWork pointer.
+    for (int i = work->start; i < work->end; i++) { // Process assigned range.
         if (isPrime(work->numbers[i])) {
-            pthread_mutex_lock(&lock);
-            primeCounter++;
-            pthread_mutex_unlock(&lock);
+            pthread_mutex_lock(&lock); // Lock to safely update the global counter.
+            total_counter++;
+            pthread_mutex_unlock(&lock); // Unlock after updating.
         }
     }
-    return NULL;
+    return NULL; // Thread completed its work.
 }
 
 int main() {
-    int number, size = 0, capacity = 10;
-    int* numbers = (int*)malloc(capacity * sizeof(int));
+    int num, numOfNumbers = 0;
 
-    while (scanf("%d", &number) != EOF) {
-        if (size >= capacity) {
-            capacity *= 2;
-            numbers = (int*)realloc(numbers, capacity * sizeof(int));
+    int capacity = 10; // Initial capacity of the numbers array.
+    int* numbers = (int*)malloc(capacity * sizeof(int)); // Dynamically allocate array.
+
+    // Read all numbers from stdin into the array.
+    while (scanf("%d", &num) != EOF) {
+        if (numOfNumbers >= capacity) { // Array is full, need more space.
+            capacity *= 2; // Double the capacity.
+            numbers = (int*)realloc(numbers, capacity * sizeof(int)); // Reallocate with new capacity.
         }
-        numbers[size++] = number;
+        numbers[numOfNumbers++] = num; // Store the number and increment count.
     }
 
+    // Initialize mutex for thread safety.
     if (pthread_mutex_init(&lock, NULL) != 0) {
-        printf("Mutex init failed\n");
+        printf("erro");
         return 1;
     }
 
-    pthread_t threads[MAX_THREADS];
-    PrimeWork works[MAX_THREADS];
-    int chunkSize = size / MAX_THREADS;
+    pthread_t tid[MAX_THREADS]; // Array to hold thread IDs.
+    PrimeWork works[MAX_THREADS]; // Array of work structs for each thread.
+    int chunkSize = numOfNumbers / MAX_THREADS; // Calculate workload per thread.
 
-    for (int i = 0; i < MAX_THREADS; i++) {
-        works[i].numbers = numbers;
-        works[i].start = i * chunkSize;
-        works[i].end = (i == MAX_THREADS - 1) ? size : (i + 1) * chunkSize; // Last thread takes any remaining
-        if (pthread_create(&threads[i], NULL, countPrimes, (void*)&works[i]) != 0) {
+    // Create threads and assign work.
+    for (int i = 0; i < MAX_THREADS; i++)
+    {
+        works[i].numbers = numbers;     // Point all works to the same numbers array.
+        works[i].start = i * chunkSize; // Calculate start index.
+        // Calculate end index, handling any remaining numbers in the last thread.
+        if (i == MAX_THREADS - 1)
+        {
+            works[i].end = numOfNumbers; // Last thread takes any remaining numbers
+        }
+        else
+        {
+            works[i].end = (i + 1) * chunkSize; // Other threads take a defined chunk
+        }
+
+        // Create thread to execute countPrimes function with works[i] as argument.
+        if (pthread_create(&tid[i], NULL, countPrimes, (void*)&works[i]) != 0) {
             perror("Failed to create thread");
-            free(numbers);
+            free(numbers); // Cleanup allocated memory on failure.
             return 1;
         }
     }
 
+    // Wait for all threads to finish.
     for (int i = 0; i < MAX_THREADS; i++) {
-        pthread_join(threads[i], NULL);
+        pthread_join(tid[i], NULL);
     }
 
-    printf("%d total primes.\n", primeCounter);
+    // Output the total count of prime numbers found.
+    printf("%d total primes.\n", total_counter);
 
-    pthread_mutex_destroy(&lock);
-    free(numbers);
+    // Cleanup and exit.
+    pthread_mutex_destroy(&lock); // Destroy the mutex.
+    free(numbers); // Free the dynamically allocated numbers array.
 
     return 0;
 }
-
