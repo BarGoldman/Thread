@@ -5,6 +5,7 @@
 #include <math.h>
 #include <time.h> 
 
+
 #define MAX_THREADS 4 // Defines the maximum number of threads to limit memory usage.
 pthread_mutex_t mutex; // Mutex for synchronizing access to shared resources.
 
