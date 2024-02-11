@@ -5,23 +5,41 @@
 #include <math.h>
 #include <time.h> 
 
+#define MAX_THREADS 4
+#define MAX_PRIME_LIMIT 100000 // Adjust based on your expected input range
+#define MAX_PRIMES 9592 // Number of primes under 100,000. Adjust according to MAX_PRIME_LIMIT
 
-#define MAX_THREADS 4 // Defines the maximum number of threads to limit memory usage.
-pthread_mutex_t mutex; // Mutex for synchronizing access to shared resources.
-
-// Global counter for the number of prime numbers found. This is shared across threads.
+pthread_mutex_t mutex;
 int total_counter = 0;
+int small_primes[MAX_PRIMES];
+int num_small_primes = 0;
 
-// Function to check if a number is prime. This uses a simple algorithm checking divisibility
-// of numbers less than or equal to the square root of the number being checked.
-bool isPrime(int num) {
-    if (num <= 1) return false; // 1 and less are not prime numbers.
-    if (num == 2) return true; // 2 is a prime number.
-    if (num % 2 == 0) return false; // Any even number other than 2 is not prime.
-    for (int i = 3; i <= sqrt(num); i += 2) { // Check only odd numbers starting from 3.
-        if (num % i == 0) return false; // If divisible, num is not prime.
+void generateSmallPrimes(int limit) {
+    bool prime[limit+1];
+    for (int i = 0; i <= limit; i++) prime[i] = true;
+    for (int p = 2; p*p <= limit; p++) {
+        if (prime[p] == true) {
+            for (int i = p*p; i <= limit; i += p)
+                prime[i] = false;
+        }
     }
-    return true; // If no divisors were found, num is prime.
+    for (int p = 2; p <= limit; p++) {
+        if (prime[p]) {
+            small_primes[num_small_primes++] = p;
+        }
+    }
+}
+
+bool isPrime(int num) {
+    if (num <= 1) return false;
+    for (int i = 0; i < num_small_primes; i++) {
+        if (num == small_primes[i]) return true;
+        if (num % small_primes[i] == 0) return false;
+    }
+    for (int i = small_primes[num_small_primes-1]+1; i <= sqrt(num); i++) {
+        if (num % i == 0) return false;
+    }
+    return true;
 }
 
 // This is the function that each thread will execute. It reads numbers from stdin,
@@ -45,28 +63,26 @@ void* threadFunction(void* arg) {
     return NULL; // Return NULL as this thread function does not return anything.
 }
 
-// The main function initializes the mutex, creates threads, and starts each one
-// by executing threadFunction. Finally, it waits for all threads to complete and
-// then cleans up by destroying the mutex.
-int main() {
-    pthread_t threads[MAX_THREADS]; // Array to hold thread identifiers.
-    pthread_mutex_init(&mutex, NULL); // Initialize the mutex.
 
-    // Create threads
+int main() {
+    pthread_t threads[MAX_THREADS];
+    pthread_mutex_init(&mutex, NULL);
+
+    // Generate small primes up to a specified limit before starting the threads
+    generateSmallPrimes(MAX_PRIME_LIMIT);
+
     for (int i = 0; i < MAX_THREADS; i++) {
         if (pthread_create(&threads[i], NULL, threadFunction, NULL) != 0) {
-            perror("Failed to create thread"); // Error handling if thread creation fails.
-            return 1; // Return with error code.
+            perror("Failed to create thread");
+            return 1;
         }
     }
 
-    // Wait for all threads to complete their execution.
     for (int i = 0; i < MAX_THREADS; i++) {
-        pthread_join(threads[i], NULL); // Join each thread.
+        pthread_join(threads[i], NULL);
     }
 
-    // Print the total number of primes found by all threads.
     printf("%d total primes.\n", total_counter);
-    pthread_mutex_destroy(&mutex); // Clean up by destroying the mutex.
-    return 0; // Return 0 indicating successful execution.
+    pthread_mutex_destroy(&mutex);
+    return 0;
 }
