@@ -4,14 +4,12 @@
 #include <pthread.h>
 #include <math.h>
 #include <time.h> 
-#include "queue.h"
 
-#define MAX_THREADS 4 
-pthread_mutex_t mutex; 
+#define MAX_THREADS 4 // Defines the maximum number of threads to limit memory usage.
+pthread_mutex_t mutex; // Mutex for synchronizing access to shared resources.
 
-
+// Global counter for the number of prime numbers found. This is shared across threads.
 int total_counter = 0;
-myQueue q;
 
 // Function to check if a number is prime. This uses a simple algorithm checking divisibility
 // of numbers less than or equal to the square root of the number being checked.
@@ -46,23 +44,10 @@ void* threadFunction(void* arg) {
     return NULL; // Return NULL as this thread function does not return anything.
 }
 
-
+// The main function initializes the mutex, creates threads, and starts each one
+// by executing threadFunction. Finally, it waits for all threads to complete and
+// then cleans up by destroying the mutex.
 int main() {
-    int num;
-    pthread_t *threads = malloc(MAX_THREADS * sizeof(pthread_t));
-    if (threads == NULL)
-	{
-		perror("error");
-		exit(1);
-	}
-    int *threadD = malloc(MAX_THREADS * sizeof(int));
-    if (threadD == NULL)
-	{
-		perror("error");
-		exit(1);
-	}
-
-
     pthread_t threads[MAX_THREADS]; // Array to hold thread identifiers.
     pthread_mutex_init(&mutex, NULL); // Initialize the mutex.
 
