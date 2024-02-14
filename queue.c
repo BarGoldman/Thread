@@ -5,6 +5,8 @@
 
 
 void createQueue(myQueue *q) {
+
+
     q->head = NULL;
     q->tail = NULL;
 

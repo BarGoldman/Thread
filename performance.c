@@ -16,13 +16,13 @@ myQueue q;
 // Function to check if a number is prime. This uses a simple algorithm checking divisibility
 // of numbers less than or equal to the square root of the number being checked.
 bool isPrime(int num) {
-    if (num <= 1) return false; // 1 and less are not prime numbers.
-    if (num == 2) return true; // 2 is a prime number.
-    if (num % 2 == 0) return false; // Any even number other than 2 is not prime.
-    for (int i = 3; i <= sqrt(num); i += 2) { // Check only odd numbers starting from 3.
-        if (num % i == 0) return false; // If divisible, num is not prime.
+    if (num <= 1) return false; 
+    if (num == 2) return true; 
+    if (num % 2 == 0) return false; 
+    for (int i = 3; i <= sqrt(num); i += 2) { 
+        if (num % i == 0) return false; 
     }
-    return true; // If no divisors were found, num is prime.
+    return true; 
 }
 
 // This is the function that each thread will execute. It reads numbers from stdin,
@@ -62,17 +62,22 @@ int main() {
 		exit(1);
 	}
 
-
-    pthread_t threads[MAX_THREADS]; // Array to hold thread identifiers.
-    pthread_mutex_init(&mutex, NULL); // Initialize the mutex.
+    createQueue(&q);
 
     // Create threads
     for (int i = 0; i < MAX_THREADS; i++) {
         if (pthread_create(&threads[i], NULL, threadFunction, NULL) != 0) {
             perror("Failed to create thread"); // Error handling if thread creation fails.
-            return 1; // Return with error code.
+            return 1; 
         }
     }
+
+    while (scanf("%d", &num) != EOF) {   
+        if (isPrime(num)) {
+            total_counter++;
+        }
+    }
+
 
     // Wait for all threads to complete their execution.
     for (int i = 0; i < MAX_THREADS; i++) {
@@ -81,6 +86,8 @@ int main() {
 
     // Print the total number of primes found by all threads.
     printf("%d total primes.\n", total_counter);
-    pthread_mutex_destroy(&mutex); // Clean up by destroying the mutex.
+
+    free(threads);
+
     return 0; // Return 0 indicating successful execution.
 }
